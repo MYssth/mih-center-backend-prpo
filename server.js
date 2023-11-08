@@ -45,9 +45,33 @@ router.route("/getprheader/:usr_req").get((request, response) => {
     });
 });
 
+router.route("/getcompprheader/:usr_req").get((request, response) => {
+  dboperations
+    .getCompPRHeader(request.params.usr_req)
+    .then((result) => {
+      response.json(result);
+    })
+    .catch((err) => {
+      console.error(err);
+      response.sendStatus(500);
+    });
+});
+
 router.route("/getpoheader/:usr_req").get((request, response) => {
   dboperations
     .getPOHeader(request.params.usr_req)
+    .then((result) => {
+      response.json(result);
+    })
+    .catch((err) => {
+      console.error(err);
+      response.sendStatus(500);
+    });
+});
+
+router.route("/getcomppoheader/:usr_req").get((request, response) => {
+  dboperations
+    .getCompPOHeader(request.params.usr_req)
     .then((result) => {
       response.json(result);
     })

@@ -48,14 +48,66 @@ async function getPRHeader(usr_req) {
         }
         return 0;
       });
-      console.log("getPRHeader complete");
-      console.log("====================");
-      return result;
-    } else {
-      console.log("getPRHeader complete");
-      console.log("====================");
-      return result;
     }
+    console.log("getPRHeader complete");
+    console.log("====================");
+    return result;
+  } catch (error) {
+    console.error(error);
+    return { status: "error", message: error.message };
+  }
+}
+
+async function getCompPRHeader(usr_req) {
+  try {
+    console.log("getCompPRHeader call try connect to server");
+    let pool = await sql.connect(config);
+    console.log("connect complete");
+    console.log("Get user request list");
+    const usrReqQry = await fetch(
+      `http://${process.env.backendHost}:${process.env.himsPort}/api/himspsn/getusrreqlist/${usr_req}`
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        return data;
+      })
+      .catch((error) => {
+        if (error.name === "AbortError") {
+          console.log("cancelled");
+        } else {
+          console.error("Error:", error);
+        }
+      });
+    // let result = [{ name: usrReqQry.name }];
+    let result = [];
+    if (usrReqQry.status !== "error") {
+      for (let i = 0; i < usrReqQry.usrReqList.length; i += 1) {
+        let tmp = await pool
+          .request()
+          .query(
+            `SELECT * FROM VIEW_PR_HEADER WHERE REFFLG = '3' AND AUTCOD = '${usrReqQry.usrReqList[i]}'`
+          );
+        // .query("SELECT * FROM VIEW_PR_HEADER");
+        tmp = await tmp.recordsets[0];
+        for (let j = 0; j < tmp.length; j += 1) {
+          await result.push(tmp[j]);
+        }
+      }
+      await result.sort((a, b) => {
+        const RQONOA = a.RQONO;
+        const RQONOB = b.RQONO;
+        if (RQONOA < RQONOB) {
+          return -1;
+        }
+        if (RQONOA > RQONOB) {
+          return 1;
+        }
+        return 0;
+      });
+    }
+    console.log("getCompPRHeader complete");
+    console.log("====================");
+    return result;
   } catch (error) {
     console.error(error);
     return { status: "error", message: error.message };
@@ -110,14 +162,68 @@ async function getPOHeader(usr_req) {
         }
         return 0;
       });
-      console.log("getPOHeader complete");
-      console.log("====================");
-      return result;
-    } else {
-      console.log("getPOHeader complete");
-      console.log("====================");
-      return result;
     }
+    console.log("getPOHeader complete");
+    console.log("====================");
+    return result;
+  } catch (error) {
+    console.error(error);
+    return { status: "error", message: error.message };
+  }
+}
+
+async function getCompPOHeader(usr_req) {
+  try {
+    console.log("getCompPOHeader call try connect to server");
+    let pool = await sql.connect(config);
+    console.log("connect complete");
+
+    console.log("Get user request list");
+    const usrReqQry = await fetch(
+      `http://${process.env.backendHost}:${process.env.himsPort}/api/himspsn/getusrreqlist/${usr_req}`
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        return data;
+      })
+      .catch((error) => {
+        if (error.name === "AbortError") {
+          console.log("cancelled");
+        } else {
+          console.error("Error:", error);
+        }
+      });
+    // let result = [{ name: usrReqQry.name }];
+    let result = [];
+
+    if (usrReqQry.status !== "error") {
+      for (let i = 0; i < usrReqQry.usrReqList.length; i += 1) {
+        let tmp = await pool
+          .request()
+          .query(
+            `SELECT * FROM VIEW_PO_HEADER WHERE ( REFFLG = 'F' OR REFFLG = 'S' OR REFFLG = 'P' ) AND AUTCOD = '${usrReqQry.usrReqList[i]}'`
+          );
+        // .query("SELECT * FROM VIEW_PO_HEADER");
+        tmp = await tmp.recordsets[0];
+        for (let j = 0; j < tmp.length; j += 1) {
+          await result.push(tmp[j]);
+        }
+      }
+      await result.sort((a, b) => {
+        const PONOA = a.PONO;
+        const PONOB = b.PONO;
+        if (PONOA < PONOB) {
+          return -1;
+        }
+        if (PONOA > PONOB) {
+          return 1;
+        }
+        return 0;
+      });
+    }
+    console.log("getCompPOHeader complete");
+    console.log("====================");
+    return result;
   } catch (error) {
     console.error(error);
     return { status: "error", message: error.message };
@@ -344,7 +450,9 @@ async function getVersion() {
 
 module.exports = {
   getPRHeader: getPRHeader,
+  getCompPRHeader: getCompPRHeader,
   getPOHeader: getPOHeader,
+  getCompPOHeader: getCompPOHeader,
   getPRDetail: getPRDetail,
   getPODetail: getPODetail,
   getAUTApprove: getAUTApprove,
